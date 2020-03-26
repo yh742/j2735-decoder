@@ -13,52 +13,33 @@ import (
 	"errors"
 	"fmt"
 	"unsafe"
+	"github.com/rs/zerolog/log"
 )
 
-// DecodeString is a public function for other packages to decode string
-// return: string in either json, xml format
-func DecodeString(bytes []byte, length uint, format StringFormatType) (string, error) {
+// DecodeBytes is a public function for other packages to decode string.
+// It returns a string in either json or xml format.
+func DecodeBytes(bytes []byte, length uint, format StringFormatType) (string, error) {
 	msgFrame := decodeMessageFrame(&C.asn_DEF_MessageFrame, bytes, uint64(length))
 	if msgFrame == nil {
-		Logger.Error("Cannot decode bytes to messageframe struct")
+		log.Error().
+			Msg("Cannot decode bytes to messageframe struct")
 		return "", errors.New("Cannot decode bytes to messageframe struct")
 	}
 	defer C.free_struct(C.asn_DEF_MessageFrame, unsafe.Pointer(msgFrame))
-	Logger.Infof("Decoding message type: %d", int64(msgFrame.messageId))
+	log.Info().
+		Msgf("Decoding message type: %d", int64(msgFrame.messageId))
 	// decode in different formats
 	switch format {
-	case JSON:
-		xml, err := msgFrameToXMLString(msgFrame)
-		if err != nil {
-			return "", errors.New("decoding xml error")
-		}
-		return xmlStringToJSONString(xml)
-	case XML:
-		return msgFrameToXMLString(msgFrame)
-	default:
-		return "", errors.New("format type not supported")
-	}
-}
-
-// DecodeMapAgt is a public function for struct types used for SD Maps
-// return: SDMapAgt interface
-func DecodeMapAgt(bytes []byte, length uint, format MapAgentFormatType) (interface{}, error) {
-	msgFrame := decodeMessageFrame(&C.asn_DEF_MessageFrame, bytes, uint64(length))
-	if msgFrame == nil {
-		Logger.Error("Cannot decode bytes to messageframe struct")
-		return nil, errors.New("Cannot decode bytes to messageframe struct")
-	}
-	defer C.free_struct(C.asn_DEF_MessageFrame, unsafe.Pointer(msgFrame))
-	Logger.Infof("Decoding message type: %+v", format)
-	switch format {
-	case FLTBSM:
-		return msgFrameToSDMapBSM(msgFrame)
-	case FLTPSM:
-		return msgFrametoSDMapPSM(msgFrame)
-	case MAPSPaT:
-		return msgFrametoMapSPaT(msgFrame)
-	default:
-		return nil, errors.New("format type not supported")
+		case JSON:
+			xml, err := msgFrameToXMLString(msgFrame)
+			if err != nil {
+				return "", errors.New("decoding xml error")
+			}
+			return xmlStringToJSONString(xml)
+		case XML:
+			return msgFrameToXMLString(msgFrame)
+		default:
+			return "", errors.New("format type not supported")
 	}
 }
 
@@ -75,7 +56,8 @@ func decodeMessageFrame(descriptor *C.asn_TYPE_descriptor_t, bytes []byte, lengt
 		C.ulong(length))
 	if rval.code != C.RC_OK {
 		err := fmt.Sprintf("Broken Rectangle encoding at byte %d", (uint64)(rval.consumed))
-		Logger.Error(err)
+		log.Error().
+			Msg(err)
 		return nil
 	}
 	return (*C.MessageFrame_t)(decoded)
