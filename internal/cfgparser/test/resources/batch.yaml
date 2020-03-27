@@ -1,0 +1,20 @@
+subscribe:
+  clientid: 111
+  username: admin
+  password: admin
+  server: subscribe.com
+  topic: vz/inputs
+  qos: 3
+publish:
+  clientid: 111
+  username: admin
+  password: admin
+  server: publish.com
+  topic: vz/outputs
+  qos: 0 
+op: 
+  mode: batch
+  batchconfig:
+    format: json 
+    pubfreq: 200 
+    expiry: 2

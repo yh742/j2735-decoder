@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
 
@@ -54,18 +55,45 @@ func overrideConfig(obj interface{}, parentName string) {
 					switch v.Kind() {
 					case reflect.String:
 						v.SetString(os.Getenv(varName))
+					case reflect.Bool:
+						b, err := strconv.ParseBool(os.Getenv(varName))
+						if err != nil {
+							log.Warn().Msgf("Cannot convert Bool value from '%s'", os.Getenv(varName))
+							break
+						}
+						v.SetBool(b)
+					case reflect.Int8:
+						num, err := strconv.ParseInt(os.Getenv(varName), 10, 8)
+						if err != nil {
+							log.Warn().Msgf("Cannot convert Int8 value from '%s'", os.Getenv(varName))
+							break
+						}
+						v.SetInt(num)
 					case reflect.Uint:
 						num, err := strconv.ParseUint(os.Getenv(varName), 10, 64)
 						if err != nil {
+							log.Warn().Msgf("Cannot convert UInt value from '%s'", os.Getenv(varName))
 							break
 						}
 						v.SetUint(num)
 					case reflect.Uint8:
 						num, err := strconv.ParseUint(os.Getenv(varName), 10, 8)
 						if err != nil {
-							break
+							val, ok := v.Addr().Interface().(Uint8Enum)
+							if !ok {
+								log.Warn().Msgf("Cannot get interface from '%s'", os.Getenv(varName))
+								break
+							}
+							temp, ok := val.ParseString(strings.ToLower(os.Getenv(varName)))
+							if !ok {
+								log.Warn().Msgf("Cannot convert UInt8 value from '%s'", os.Getenv(varName))
+								break
+							}
+							num = uint64(temp)
 						}
 						v.SetUint(num)
+					default:
+						log.Warn().Msgf("Not a support type '%s'", v.Kind())
 					}
 				}
 			}

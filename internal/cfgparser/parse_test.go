@@ -7,25 +7,27 @@ import (
 	"testing"
 
 	"github.com/yh742/j2735-decoder/internal/cfgparser"
+	"github.com/yh742/j2735-decoder/pkg/decoder"
 	"gotest.tools/assert"
 )
 
 func TestParseYaml(t *testing.T) {
-	testArray := [...]string{"config.yaml", "config2.yaml"}
+	testArray := [...]string{"batch.yaml", "playback.yaml"}
 	for _, item := range testArray {
 		t.Logf("Parsing '%s'... ", item)
 		cfg, err := cfgparser.Parse(path.Join("./test/resources/", item))
 		assert.NilError(t, err)
-		assert.Equal(t, cfg.Hostname, "xyz.com")
 		assert.Equal(t, cfg.Subscribe.Qos, uint8(3))
 		assert.Equal(t, cfg.Publish.Topic, "vz/outputs")
-		assert.Equal(t, cfg.Publish.Format, "json")
-		assert.Equal(t, cfg.Auth.Clientid, "111")
+		assert.Equal(t, cfg.Publish.Clientid, "111")
 		switch cfg.Op.Mode {
-		case "batch":
-			assert.Equal(t, cfg.Op.Settings.Pubfreq, uint(200))
-		case "playback":
-			assert.Equal(t, cfg.Op.Settings.File, "./playback.txt")
+		case cfgparser.Batch:
+			assert.Equal(t, cfg.Op.BatchCfg.Pubfreq, uint(200))
+			assert.Equal(t, cfg.Op.BatchCfg.Format, decoder.JSON)
+		case cfgparser.Playback:
+			assert.Equal(t, cfg.Op.PlaybackCfg.File, "./playback.txt")
+			assert.Equal(t, cfg.Op.PlaybackCfg.Loop, true)
+			assert.Equal(t, cfg.Op.PlaybackCfg.Format, decoder.JSON)
 		default:
 			log.Fatal("No suitable operation mode found!")
 		}
@@ -34,18 +36,18 @@ func TestParseYaml(t *testing.T) {
 
 // TestEnvVariables tests if environment variables overrides settings
 func TestEnvVariables(t *testing.T) {
-	os.Setenv("HOSTNAME", "abc.com")
+	os.Setenv("PUBLISH_MQTTSETTINGS_CLIENTID", "222")
 	os.Setenv("SUBSCRIBE_MQTTSETTINGS_SERVER", "subscribe.net")
-	os.Setenv("PUBLISH_FORMAT", "xml")
-	os.Setenv("AUTH_CLIENTID", "222")
 	os.Setenv("OP_MODE", "PLAYBACK")
-	os.Setenv("OP_SETTINGS_BATCHCONFIG_PUBFREQ", "900")
-	cfg, err := cfgparser.Parse(path.Join("./test/resources/config.yaml"))
+	os.Setenv("OP_BATCHCFG_FORMAT", "xml")
+	os.Setenv("OP_BATCHCFG_PUBFREQ", "900")
+	cfg, err := cfgparser.Parse(path.Join("./test/resources/batch.yaml"))
 	assert.NilError(t, err)
-	t.Logf("%v", cfg)
-	assert.Equal(t, cfg.Hostname, "abc.com")
+
+	// these should match the environment variables you set above
+	assert.Equal(t, cfg.Publish.Clientid, "222")
 	assert.Equal(t, cfg.Subscribe.Server, "subscribe.net")
-	assert.Equal(t, cfg.Publish.Format, "xml")
-	assert.Equal(t, cfg.Auth.Clientid, "222")
-	assert.Equal(t, cfg.Op.Settings.BatchConfig.Pubfreq, uint(900))
+	assert.Equal(t, cfg.Op.Mode, cfgparser.Playback)
+	assert.Equal(t, cfg.Op.BatchCfg.Pubfreq, uint(900))
+	assert.Equal(t, cfg.Op.BatchCfg.Format, decoder.XML)
 }
