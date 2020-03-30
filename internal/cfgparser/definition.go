@@ -18,12 +18,10 @@ type CfgMode uint8
 const (
 	// Batch is used for batch publishing decoded msgs
 	Batch CfgMode = iota
-	// Stream is used for publishing decoded msgs
-	Stream
 	// Playback is used for replaying uper msgs from a pre-recorded file
 	Playback
-	// Passthrough is used for bridging msgs (no decoding)
-	Passthrough
+	// Bridge is used for bridging msgs (no decoding)
+	Bridge
 )
 
 // UnmarshalYAML for CfgMode type
@@ -37,17 +35,15 @@ func (mode *CfgMode) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		*mode = Batch
 	case "playback":
 		*mode = Playback
-	case "passthrough":
-		*mode = Passthrough
-	case "stream":
-		*mode = Stream
+	case "bridge":
+		*mode = Bridge
 	}
 	return nil
 }
 
 // ParseString returns number based on string representation
 func (mode *CfgMode) ParseString(str string) (uint8, bool) {
-	m := map[string]uint8{"batch": 0, "stream": 1, "playback": 2, "passthrough": 3}
+	m := map[string]uint8{"batch": 0, "playback": 1, "bridge": 2}
 	val, ok := m[str]
 	return val, ok
 }
@@ -62,6 +58,7 @@ type Config struct {
 	}
 	Op struct {
 		Mode        CfgMode
+		Format      decoder.StringFormatType
 		BatchCfg    BatchConfig    `yaml:"batchconfig"`
 		PlaybackCfg PlaybackConfig `yaml:"playbackconfig"`
 	}
@@ -69,16 +66,14 @@ type Config struct {
 
 // PlaybackConfig are settings used for playback mode
 type PlaybackConfig struct {
-	File   string
-	Loop   bool
-	Format decoder.StringFormatType
+	File string
+	Loop bool
 }
 
 // BatchConfig are settings used for batch mode
 type BatchConfig struct {
 	Pubfreq uint
 	Expiry  uint
-	Format  decoder.StringFormatType
 }
 
 // MqttSettings are settings used for batch mode

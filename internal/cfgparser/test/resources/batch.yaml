@@ -14,7 +14,7 @@ publish:
   qos: 0 
 op: 
   mode: batch
+  format: json 
   batchconfig:
-    format: json 
     pubfreq: 200 
     expiry: 2

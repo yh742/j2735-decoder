@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"encoding/hex"
+	"io"
+	"io/ioutil"
+	"os"
 	"strings"
+	"syscall"
 	"testing"
-	"time"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog"
@@ -12,76 +16,65 @@ import (
 	"gotest.tools/assert"
 )
 
-var mockStore []interface{}
+var mc *mockClient
 
-type mockClient struct{}
-
-func (mock *mockClient) IsConnected() bool {
-	return true
-}
-
-func (mock *mockClient) IsConnectionOpen() bool {
-	return true
-}
-
-func (mock *mockClient) Connect() MQTT.Token {
-	return mockToken{}
-}
-
-func (mock *mockClient) Disconnect(quiesce uint) {}
-
-func (mock *mockClient) Publish(topic string, qos byte, retained bool, payload interface{}) MQTT.Token {
-	if mockStore == nil {
-		mockStore = make([]interface{}, 100)
-	}
-	mockStore = append(mockStore, payload)
-	return mockToken{}
-}
-
-func (mock *mockClient) Subscribe(topic string, qos byte, callback MQTT.MessageHandler) MQTT.Token {
-	return mockToken{}
-}
-
-func (mock *mockClient) SubscribeMultiple(filters map[string]byte, callback MQTT.MessageHandler) MQTT.Token {
-	return mockToken{}
-}
-func (mock *mockClient) Unsubscribe(topics ...string) MQTT.Token {
-	return mockToken{}
-}
-
-func (mock *mockClient) AddRoute(topic string, callback MQTT.MessageHandler) {}
-
-func (mock *mockClient) OptionsReader() MQTT.ClientOptionsReader {
-	return MQTT.ClientOptionsReader{}
-}
-
-type mockToken struct{}
-
-func (m mockToken) Wait() bool {
-	return true
-}
-
-func (m mockToken) WaitTimeout(time.Duration) bool {
-	return false
-}
-
-func (m mockToken) Error() error {
-	return nil
-}
-
-func TestPlayback(t *testing.T) {
+func TestMain(m *testing.M) {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	// stub out mqtt method
 	connectToMqtt = func(server string, clientid string, username string, password string) (MQTT.Client, error) {
-		return &mockClient{}, nil
+		return mc, nil
 	}
+	os.Exit(m.Run())
+}
+
+func TestPlayback(t *testing.T) {
 	// read configuration
+	mc = &mockClient{}
 	cfg, err := cfgparser.Parse("./test/resources/config/playback.yaml")
 	assert.NilError(t, err)
 	playback(cfg)
-	lastMsg, ok := mockStore[len(mockStore)-1].([]byte)
+	mc.PubMux.RLock()
+	lastMsg, ok := mc.MockStore[len(mc.MockStore)-1].([]byte)
+	mc.PubMux.RUnlock()
 	assert.Assert(t, ok)
 	lastStr := hex.EncodeToString(lastMsg)
-	assert.Equal(t, strings.ToUpper(lastStr), "80142E4140049855C407A76D84C11CB2FD1488017FFFFFFFF00002EFFD7A37C14E8005800011823100082000103400480003035B7D5233D38000")
+	assert.Equal(t,
+		strings.ToUpper(lastStr),
+		"80142E4140049855C407A76D84C11CB2FD1488017FFFFFFFF00002EFFD7A37C14E8005800011823100082000103400480003035B7D5233D38000")
+}
+
+func TestBridgePassthrough(t *testing.T) {
+	// read configuration
+	mc = &mockClient{}
+	cfg, err := cfgparser.Parse("./test/resources/config/bridge-passthrough.yaml")
+	assert.NilError(t, err)
+	go func() {
+		bridge(cfg)
+	}()
+	<-testReady
+	file, err := os.Open("./test/resources/logs/bsm-sample.log")
+	defer file.Close()
+	assert.NilError(t, err)
+	reader := bufio.NewReader(file)
+	for true {
+		line, err := reader.ReadString('\n')
+		if err == io.EOF {
+			t.Log("EOF reached")
+			break
+		}
+		assert.NilError(t, err)
+		mc.CallBack(mc, &message{
+			payload: []byte(line),
+		})
+	}
+	sig <- syscall.SIGINT
+	mc.PubMux.RLock()
+	lastMsg, ok := mc.MockStore[len(mc.MockStore)-1].([]byte)
+	mc.PubMux.RUnlock()
+	assert.Assert(t, ok)
+	file.Seek(0, 0)
+	data, err := ioutil.ReadAll(file)
+	assert.NilError(t, err)
+	assert.Equal(t, string(lastMsg[len(lastMsg)-20:]), string(data[len(data)-20:]))
 }

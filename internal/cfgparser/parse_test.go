@@ -23,11 +23,11 @@ func TestParseYaml(t *testing.T) {
 		switch cfg.Op.Mode {
 		case cfgparser.Batch:
 			assert.Equal(t, cfg.Op.BatchCfg.Pubfreq, uint(200))
-			assert.Equal(t, cfg.Op.BatchCfg.Format, decoder.JSON)
+			assert.Equal(t, cfg.Op.Format, decoder.JSON)
 		case cfgparser.Playback:
 			assert.Equal(t, cfg.Op.PlaybackCfg.File, "./playback.txt")
 			assert.Equal(t, cfg.Op.PlaybackCfg.Loop, true)
-			assert.Equal(t, cfg.Op.PlaybackCfg.Format, decoder.JSON)
+			assert.Equal(t, cfg.Op.Format, decoder.JSON)
 		default:
 			log.Fatal("No suitable operation mode found!")
 		}
@@ -39,7 +39,7 @@ func TestEnvVariables(t *testing.T) {
 	os.Setenv("PUBLISH_MQTTSETTINGS_CLIENTID", "222")
 	os.Setenv("SUBSCRIBE_MQTTSETTINGS_SERVER", "subscribe.net")
 	os.Setenv("OP_MODE", "PLAYBACK")
-	os.Setenv("OP_BATCHCFG_FORMAT", "xml")
+	os.Setenv("OP_FORMAT", "XML")
 	os.Setenv("OP_BATCHCFG_PUBFREQ", "900")
 	cfg, err := cfgparser.Parse(path.Join("./test/resources/batch.yaml"))
 	assert.NilError(t, err)
@@ -49,5 +49,5 @@ func TestEnvVariables(t *testing.T) {
 	assert.Equal(t, cfg.Subscribe.Server, "subscribe.net")
 	assert.Equal(t, cfg.Op.Mode, cfgparser.Playback)
 	assert.Equal(t, cfg.Op.BatchCfg.Pubfreq, uint(900))
-	assert.Equal(t, cfg.Op.BatchCfg.Format, decoder.XML)
+	assert.Equal(t, cfg.Op.Format, decoder.XML)
 }

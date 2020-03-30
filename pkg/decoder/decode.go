@@ -12,13 +12,16 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"unsafe"
+
 	"github.com/rs/zerolog/log"
 )
 
 // DecodeBytes is a public function for other packages to decode string.
 // It returns a string in either json or xml format.
-func DecodeBytes(bytes []byte, length uint, format StringFormatType) (string, error) {
+// If source is provided, the broker topic will be added.
+func DecodeBytes(bytes []byte, length uint, format StringFormatType, source string) (string, error) {
 	msgFrame := decodeMessageFrame(&C.asn_DEF_MessageFrame, bytes, uint64(length))
 	if msgFrame == nil {
 		log.Error().
@@ -30,16 +33,26 @@ func DecodeBytes(bytes []byte, length uint, format StringFormatType) (string, er
 		Msgf("Decoding message type: %d", int64(msgFrame.messageId))
 	// decode in different formats
 	switch format {
-		case JSON:
-			xml, err := msgFrameToXMLString(msgFrame)
-			if err != nil {
-				return "", errors.New("decoding xml error")
-			}
-			return xmlStringToJSONString(xml)
-		case XML:
-			return msgFrameToXMLString(msgFrame)
-		default:
-			return "", errors.New("format type not supported")
+	case JSON:
+		xml, err := msgFrameToXMLString(msgFrame)
+		if err != nil {
+			return "", errors.New("decoding json error")
+		}
+		if source != "" {
+			xml = strings.Replace(xml, "<MessageFrame>", "<MessageFrame><source>"+source+"</source>", 1)
+		}
+		return xmlStringToJSONString(xml)
+	case XML:
+		xml, err := msgFrameToXMLString(msgFrame)
+		if err != nil {
+			return "", errors.New("decoding xml error")
+		}
+		if source != "" {
+			xml = strings.Replace(xml, "<MessageFrame>", "<MessageFrame><source>"+source+"</source>", 1)
+		}
+		return xml, nil
+	default:
+		return "", errors.New("format type not supported")
 	}
 }
 

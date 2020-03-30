@@ -39,7 +39,7 @@ func TestUperToXmlStringConversion(t *testing.T) {
 		uperBytes, err := ioutil.ReadAll(uperFile)
 		assert.NilError(t, err)
 		// decode
-		decodedMsg, err := decoder.DecodeBytes(uperBytes, uint(len(uperBytes)), decoder.XML)
+		decodedMsg, err := decoder.DecodeBytes(uperBytes, uint(len(uperBytes)), decoder.XML, "FOO")
 		assert.NilError(t, err)
 		xmlBytes, err := ioutil.ReadAll(xmlFile)
 		assert.NilError(t, err)
@@ -78,11 +78,12 @@ func TestUperToJsonStringConversion(t *testing.T) {
 		uperBytes, err := ioutil.ReadAll(uperFile)
 		assert.NilError(t, err)
 		// decode
-		decodedMsg, err := decoder.DecodeBytes(uperBytes, uint(len(uperBytes)), decoder.JSON)
+		decodedMsg, err := decoder.DecodeBytes(uperBytes, uint(len(uperBytes)), decoder.JSON, "FOO")
 		assert.NilError(t, err)
 		jsonBytes, err := ioutil.ReadAll(jsonFile)
 		assert.NilError(t, err)
 		jsonString := fmt.Sprintf("%s", jsonBytes)
+		t.Logf("%s", decodedMsg)
 		eq, err := AreEqualJSON(jsonString, decodedMsg)
 		assert.NilError(t, err)
 		assert.Assert(t, eq)

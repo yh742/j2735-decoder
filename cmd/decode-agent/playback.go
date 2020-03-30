@@ -18,7 +18,7 @@ func playback(cfg cfgparser.Config) {
 	log.Info().
 		Str("op.playbackcfg.file", cfg.Op.PlaybackCfg.File).
 		Bool("op.playbackcfg.loop", cfg.Op.PlaybackCfg.Loop).
-		Uint8("op.playbackcfg.format", uint8(cfg.Op.PlaybackCfg.Format)).
+		Uint8("op.playbackcfg.format", uint8(cfg.Op.Format)).
 		Send()
 
 	// read in playback file
@@ -36,6 +36,11 @@ func playback(cfg cfgparser.Config) {
 		cfg.Publish.Clientid = generateClientID()
 	}
 	mqClient, err := connectToMqtt(cfg.Publish.Server, cfg.Publish.Clientid, cfg.Publish.Username, cfg.Publish.Password)
+	if err != nil {
+		log.Fatal().
+			Err(err).
+			Msg("cannot connect to mqtt server")
+	}
 
 	// read from file
 	reader := bufio.NewReader(file)

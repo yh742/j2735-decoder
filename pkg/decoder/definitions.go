@@ -11,6 +11,7 @@ type StringFormatType uint8
 const (
 	XML StringFormatType = iota
 	JSON
+	PASS
 )
 
 // UnmarshalYAML for decoder.StringFormatType type
@@ -24,13 +25,15 @@ func (format *StringFormatType) UnmarshalYAML(unmarshal func(interface{}) error)
 		*format = XML
 	case "json":
 		*format = JSON
+	case "pass":
+		*format = PASS
 	}
 	return nil
 }
 
 // ParseString returns number based on string representation
 func (format *StringFormatType) ParseString(str string) (uint8, bool) {
-	m := map[string]uint8{"xml": 0, "json": 1}
+	m := map[string]uint8{"xml": 0, "json": 1, "pass": 2}
 	val, ok := m[str]
 	return val, ok
 }

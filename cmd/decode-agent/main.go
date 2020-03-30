@@ -16,6 +16,7 @@ func main() {
 	flag.Parse()
 
 	// set log time format
+	log.Logger = log.With().Caller().Logger()
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	zerolog.SetGlobalLevel(zerolog.Level(*logLevel))
 
@@ -46,8 +47,8 @@ func main() {
 	// supported modes: playback, batch, stream, passthrough
 	switch cfg.Op.Mode {
 	case cfgparser.Playback:
-	case cfgparser.Passthrough:
-	case cfgparser.Batch:
-	case cfgparser.Stream:
+		playback(cfg)
+	case cfgparser.Bridge:
+		bridge(cfg)
 	}
 }
