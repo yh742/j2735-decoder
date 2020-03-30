@@ -1,12 +1,10 @@
 package decoder_test
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
-	"reflect"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -48,21 +46,6 @@ func TestUperToXmlStringConversion(t *testing.T) {
 	}
 }
 
-func AreEqualJSON(s1, s2 string) (bool, error) {
-	var o1 interface{}
-	var o2 interface{}
-	var err error
-	err = json.Unmarshal([]byte(s1), &o1)
-	if err != nil {
-		return false, fmt.Errorf("Error mashalling string 1 :: %s", err.Error())
-	}
-	err = json.Unmarshal([]byte(s2), &o2)
-	if err != nil {
-		return false, fmt.Errorf("Error mashalling string 2 :: %s", err.Error())
-	}
-	return reflect.DeepEqual(o1, o2), nil
-}
-
 func TestUperToJsonStringConversion(t *testing.T) {
 	// filenames
 	testArray := [...]string{"bsm1", "bsm2", "bsm3", "psm1", "spat"}
@@ -84,7 +67,7 @@ func TestUperToJsonStringConversion(t *testing.T) {
 		assert.NilError(t, err)
 		jsonString := fmt.Sprintf("%s", jsonBytes)
 		t.Logf("%s", decodedMsg)
-		eq, err := AreEqualJSON(jsonString, decodedMsg)
+		eq, err := decoder.AreEqualJSON(jsonString, decodedMsg)
 		assert.NilError(t, err)
 		assert.Assert(t, eq)
 	}

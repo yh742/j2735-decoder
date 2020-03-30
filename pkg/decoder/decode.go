@@ -29,7 +29,7 @@ func DecodeBytes(bytes []byte, length uint, format StringFormatType, source stri
 		return "", errors.New("Cannot decode bytes to messageframe struct")
 	}
 	defer C.free_struct(C.asn_DEF_MessageFrame, unsafe.Pointer(msgFrame))
-	log.Info().
+	log.Debug().
 		Msgf("Decoding message type: %d", int64(msgFrame.messageId))
 	// decode in different formats
 	switch format {

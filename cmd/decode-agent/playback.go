@@ -13,6 +13,51 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type playbackHandler func(data []byte)
+
+func playLogFile(file *os.File, handler playbackHandler, loop bool) {
+	reader := bufio.NewReader(file)
+	lineCnt := 0
+	for true {
+		line, err := reader.ReadString('\n')
+		if err != nil && err != io.EOF {
+			log.Error().
+				Err(err).
+				Msgf("something occured while reading playback file line #%d", lineCnt)
+			continue
+		}
+		if err == io.EOF {
+			log.Debug().Msg("reached the end of file ...")
+			if loop {
+				file.Seek(0, 0)
+				lineCnt = 0
+				continue
+			}
+			break
+		}
+		var objMap map[string]interface{}
+		if err = json.Unmarshal([]byte(line), &objMap); err != nil {
+			log.Fatal().
+				Err(err).
+				Msgf("Unable to unmarshal json at line %d", lineCnt)
+		}
+		str, ok := objMap["message"].(string)
+		if !ok {
+			log.Fatal().
+				Err(errors.New("Conversion Error")).
+				Msgf("JSON message field is not populated with the right type at line %d", lineCnt)
+		}
+		data, err := hex.DecodeString(str)
+		if err != nil {
+			log.Warn().
+				Err(err).
+				Msgf("Could not decode hexstring at line %d, %s", lineCnt, str)
+		}
+		handler(data)
+		lineCnt++
+	}
+}
+
 func playback(cfg cfgparser.Config) {
 	// print out playback configuration
 	log.Info().
@@ -43,44 +88,7 @@ func playback(cfg cfgparser.Config) {
 	}
 
 	// read from file
-	reader := bufio.NewReader(file)
-	lineCnt := 0
-	for true {
-		line, err := reader.ReadString('\n')
-		if err != nil && err != io.EOF {
-			log.Error().
-				Err(err).
-				Msgf("something occured while reading playback file line #%d", lineCnt)
-			continue
-		}
-		if err == io.EOF {
-			log.Debug().Msg("reached the end of file ...")
-			if cfg.Op.PlaybackCfg.Loop {
-				file.Seek(0, 0)
-				lineCnt = 0
-				continue
-			}
-			break
-		}
-		var objMap map[string]interface{}
-		if err = json.Unmarshal([]byte(line), &objMap); err != nil {
-			log.Fatal().
-				Err(err).
-				Msgf("Unable to unmarshal json at line %d", lineCnt)
-		}
-		str, ok := objMap["message"].(string)
-		if !ok {
-			log.Fatal().
-				Err(errors.New("Conversion Error")).
-				Msgf("JSON message field is not populated with the right type at line %d", lineCnt)
-		}
-		data, err := hex.DecodeString(str)
-		if err != nil {
-			log.Warn().
-				Err(err).
-				Msgf("Could not decode hexstring at line %d, %s", lineCnt, str)
-		}
+	playLogFile(file, func(data []byte) {
 		mqClient.Publish(cfg.Publish.Topic, cfg.Publish.Qos, false, data)
-		lineCnt++
-	}
+	}, cfg.Op.PlaybackCfg.Loop)
 }

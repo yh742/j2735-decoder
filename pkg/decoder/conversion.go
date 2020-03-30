@@ -29,13 +29,15 @@ package decoder
 // }
 import "C"
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"unsafe"
 
-	"github.com/rs/zerolog/log"
 	xj "github.com/basgys/goxml2json"
+	"github.com/rs/zerolog/log"
 )
 
 // octetStringToGoString takes in a ASN1 octet string and converts it to a Go string in hex
@@ -67,7 +69,6 @@ func bitStringToGoString(bString *C.BIT_STRING_t) string {
 	return resStr
 }
 
-
 // msgFrameToXMLString convert message frame to XML
 func msgFrameToXMLString(msgFrame *C.MessageFrame_t) (string, error) {
 	size := 4096
@@ -76,7 +77,7 @@ func msgFrameToXMLString(msgFrame *C.MessageFrame_t) (string, error) {
 		buffer = make([]byte, size)
 		bufPtr := unsafe.Pointer(&buffer[0])
 		rval := C.xer_sprint(bufPtr, &C.asn_DEF_MessageFrame, unsafe.Pointer(msgFrame))
-		log.Info().Msgf("Bytes Encoded: %d", int(rval))
+		log.Debug().Msgf("Bytes Encoded: %d", int(rval))
 		size = int(rval)
 		if int(rval) == -1 {
 			err := "Cannot encode message!"
@@ -99,4 +100,20 @@ func xmlStringToJSONString(xmlStr string) (string, error) {
 		return "", err
 	}
 	return json.String(), nil
+}
+
+// AreEqualJSON compares to json to see if they're equal
+func AreEqualJSON(s1, s2 string) (bool, error) {
+	var o1 interface{}
+	var o2 interface{}
+	var err error
+	err = json.Unmarshal([]byte(s1), &o1)
+	if err != nil {
+		return false, fmt.Errorf("Error mashalling string 1 :: %s", err.Error())
+	}
+	err = json.Unmarshal([]byte(s2), &o2)
+	if err != nil {
+		return false, fmt.Errorf("Error mashalling string 2 :: %s", err.Error())
+	}
+	return reflect.DeepEqual(o1, o2), nil
 }
