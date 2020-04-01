@@ -16,29 +16,33 @@ import (
 func generateClientID() string {
 	hostname, err := os.Hostname()
 	if err != nil {
-		hostname = "host-" + string(rand.Int63())
+		hostname = "host-" + string(rand.Int63()) + string(rand.Int63())
 	}
 	return hostname + "-" + strconv.Itoa(time.Now().Second())
 }
 
 // Set this way so we can test this stub this out for test
-var connectToMqtt = func(server string, clientid string, username string, password string) (MQTT.Client, error) {
-	connOpts := MQTT.NewClientOptions().AddBroker(server).SetClientID(clientid).SetCleanSession(true)
+var connectToMqtt = func(server string, clientid string, auth basicAuth, callback MQTT.MessageHandler) (MQTT.Client, error) {
+	connOpts := MQTT.NewClientOptions()
 	if strings.TrimSpace(server) != "" {
 		connOpts.AddBroker(server)
 	} else {
 		return nil, errors.New("server string cannot be empty")
 	}
-	if username != "" {
+	if auth.username != "" {
 		log.Debug().Msg("username specified")
-		connOpts.SetUsername(username)
+		connOpts.SetUsername(auth.username)
 	}
-	if password != "" {
+	if auth.password != "" {
 		log.Debug().Msg("password specified")
-		connOpts.SetPassword(password)
+		connOpts.SetPassword(auth.password)
+	}
+	if strings.TrimSpace(clientid) == "" {
+		clientid = generateClientID()
 	}
 	connOpts.SetClientID(clientid)
 	connOpts.SetCleanSession(true)
+	connOpts.DefaultPublishHandler = callback
 
 	// skip tls config for now
 	tlsConfig := &tls.Config{InsecureSkipVerify: true, ClientAuth: tls.NoClientCert}

@@ -59,28 +59,33 @@ type Config struct {
 	Op struct {
 		Mode        CfgMode
 		Format      decoder.StringFormatType
-		BatchCfg    BatchConfig    `yaml:"batchconfig"`
+		BridgeCfg   BridgeConfig   `yaml:"bridgeconfig"`
 		PlaybackCfg PlaybackConfig `yaml:"playbackconfig"`
 	}
 }
 
 // PlaybackConfig are settings used for playback mode
 type PlaybackConfig struct {
-	File string
-	Loop bool
+	File    string
+	Loop    bool
+	PubFreq uint
+}
+
+// BridgeConfig are settigns used for bridge mode
+type BridgeConfig struct {
+	HTTPAuth string `yaml:"http-auth"`
 }
 
 // BatchConfig are settings used for batch mode
-type BatchConfig struct {
-	Pubfreq uint
-	Expiry  uint
-}
+// type BatchConfig struct {
+// 	Pubfreq uint
+// 	Expiry  uint
+// }
 
 // MqttSettings are settings used for batch mode
 type MqttSettings struct {
 	Clientid string
-	Username string
-	Password string
+	MQTTAuth string `yaml:"mqtt-auth"`
 	Server   string
 	Topic    string
 	Qos      uint8

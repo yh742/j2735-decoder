@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"time"
 
 	"github.com/yh742/j2735-decoder/internal/cfgparser"
 
@@ -15,7 +16,7 @@ import (
 
 type playbackHandler func(data []byte)
 
-func playLogFile(file *os.File, handler playbackHandler, loop bool) {
+func playLogFile(file *os.File, handler playbackHandler, loop bool, pubFreq uint) {
 	reader := bufio.NewReader(file)
 	lineCnt := 0
 	for true {
@@ -47,6 +48,7 @@ func playLogFile(file *os.File, handler playbackHandler, loop bool) {
 				Err(errors.New("Conversion Error")).
 				Msgf("JSON message field is not populated with the right type at line %d", lineCnt)
 		}
+		log.Debug().Msgf("%s", str)
 		data, err := hex.DecodeString(str)
 		if err != nil {
 			log.Warn().
@@ -55,6 +57,7 @@ func playLogFile(file *os.File, handler playbackHandler, loop bool) {
 		}
 		handler(data)
 		lineCnt++
+		time.Sleep(time.Duration(pubFreq) * time.Millisecond)
 	}
 }
 
@@ -80,7 +83,8 @@ func playback(cfg cfgparser.Config) {
 		// clientid is needed and needs to be unique
 		cfg.Publish.Clientid = generateClientID()
 	}
-	mqClient, err := connectToMqtt(cfg.Publish.Server, cfg.Publish.Clientid, cfg.Publish.Username, cfg.Publish.Password)
+	auth := parseAuthFiles(cfg.Publish.MQTTAuth)
+	pubClient, err := connectToMqtt(cfg.Publish.Server, cfg.Publish.Clientid, auth, nil)
 	if err != nil {
 		log.Fatal().
 			Err(err).
@@ -89,6 +93,6 @@ func playback(cfg cfgparser.Config) {
 
 	// read from file
 	playLogFile(file, func(data []byte) {
-		mqClient.Publish(cfg.Publish.Topic, cfg.Publish.Qos, false, data)
-	}, cfg.Op.PlaybackCfg.Loop)
+		pubClient.Publish(cfg.Publish.Topic, cfg.Publish.Qos, false, data)
+	}, cfg.Op.PlaybackCfg.Loop, cfg.Op.PlaybackCfg.PubFreq)
 }

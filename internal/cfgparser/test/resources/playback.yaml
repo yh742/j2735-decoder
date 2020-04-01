@@ -1,14 +1,12 @@
 subscribe:
   clientid: 111
-  username: admin
-  password: admin
+  auth: /etc/decode-agent/pass
   server: subscribe.com
   topic: vz/inputs
   qos: 3
 publish:
   clientid: 111
-  username: admin
-  password: admin
+  auth: /etc/decode-agent/pass
   server: publish.com
   topic: vz/outputs
   qos: 0 
@@ -18,3 +16,4 @@ op:
   playbackconfig: 
     file: "./playback.txt"
     loop: true
+    pubfreq: 200

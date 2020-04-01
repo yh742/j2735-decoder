@@ -37,9 +37,11 @@ func (mock *mockClient) Publish(topic string, qos byte, retained bool, payload i
 }
 
 func (mock *mockClient) Subscribe(topic string, qos byte, callback MQTT.MessageHandler) MQTT.Token {
-	mock.CbMux.Lock()
-	mock.CallBack = callback
-	mock.CbMux.Unlock()
+	if callback != nil {
+		mock.CbMux.Lock()
+		mock.CallBack = callback
+		mock.CbMux.Unlock()
+	}
 	return mockToken{}
 }
 

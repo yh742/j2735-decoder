@@ -8,6 +8,8 @@ require (
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/google/go-cmp v0.3.0 // indirect
+	github.com/gorilla/handlers v1.4.2
+	github.com/gorilla/mux v1.7.4
 	github.com/orcaman/concurrent-map v0.0.0-20190314100340-2693aad1ed75
 	github.com/rs/zerolog v1.18.0
 	github.com/stretchr/testify v1.3.0 // indirect

@@ -1,7 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/hex"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 	"strings"
@@ -19,9 +23,14 @@ var mc *mockClient
 
 func TestMain(m *testing.M) {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	// stub out mqtt method
-	connectToMqtt = func(server string, clientid string, username string, password string) (MQTT.Client, error) {
+	connectToMqtt = func(server string, clientid string, auth basicAuth, callback MQTT.MessageHandler) (MQTT.Client, error) {
+		if callback != nil {
+			mc.CbMux.Lock()
+			mc.CallBack = callback
+			mc.CbMux.Unlock()
+		}
 		return mc, nil
 	}
 	os.Exit(m.Run())
@@ -52,6 +61,7 @@ func TestBridgePassthrough(t *testing.T) {
 		mc = &mockClient{}
 		cfg, err := cfgparser.Parse(path.Join("./test/resources/config/", key))
 		assert.NilError(t, err)
+		// launch bridge asynchronously
 		go func() {
 			bridge(cfg)
 		}()
@@ -63,7 +73,7 @@ func TestBridgePassthrough(t *testing.T) {
 			mc.CallBack(mc, &message{
 				payload: data,
 			})
-		}, false)
+		}, false, cfg.Op.PlaybackCfg.PubFreq)
 		sig <- syscall.SIGINT
 		if key == "bridge-passthrough.yaml" {
 			mc.PubMux.RLock()
@@ -81,4 +91,47 @@ func TestBridgePassthrough(t *testing.T) {
 			assert.Assert(t, ok)
 		}
 	}
+}
+
+func TestHttpGet(t *testing.T) {
+	// read configuration
+	mc = &mockClient{}
+	cfg, err := cfgparser.Parse("./test/resources/config/bridge-passthrough.yaml")
+	assert.NilError(t, err)
+	// launch bridge asynchronously
+	go func() {
+		bridge(cfg)
+	}()
+	<-testReady
+	client := &http.Client{}
+	// check GET calls
+	req, err := http.NewRequest("GET", "http://localhost:8080/publish/setting", nil)
+	assert.NilError(t, err)
+	req.SetBasicAuth("admin", "admin")
+	resp, err := client.Do(req)
+	assert.NilError(t, err)
+	assert.Equal(t, resp.StatusCode, 200)
+	// check PUT calls
+	reqBody, err := json.Marshal(map[string]string{
+		"topic": "test/test",
+	})
+	assert.NilError(t, err)
+	req, err = http.NewRequest("PUT", "http://localhost:8080/subscribe/setting", bytes.NewBuffer(reqBody))
+	assert.NilError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.SetBasicAuth("admin", "admin")
+	resp, err = client.Do(req)
+	assert.NilError(t, err)
+	assert.Equal(t, resp.StatusCode, 200)
+	// update with old value should throw 204
+	resp, err = client.Do(req)
+	assert.NilError(t, err)
+	assert.Equal(t, resp.StatusCode, 204)
+	// check error condition
+	req.Body = ioutil.NopCloser(strings.NewReader("blahblah"))
+	req.ContentLength = int64(len("blahblah"))
+	resp, err = client.Do(req)
+	assert.NilError(t, err)
+	assert.Equal(t, resp.StatusCode, 500)
+	sig <- syscall.SIGINT
 }
