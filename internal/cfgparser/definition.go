@@ -20,8 +20,8 @@ const (
 	Batch CfgMode = iota
 	// Playback is used for replaying uper msgs from a pre-recorded file
 	Playback
-	// Bridge is used for bridging msgs (no decoding)
-	Bridge
+	// Stream is used for bridging msgs (no decoding)
+	Stream
 )
 
 // UnmarshalYAML for CfgMode type
@@ -35,8 +35,8 @@ func (mode *CfgMode) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		*mode = Batch
 	case "playback":
 		*mode = Playback
-	case "bridge":
-		*mode = Bridge
+	case "stream":
+		*mode = Stream
 	}
 	return nil
 }
@@ -59,7 +59,7 @@ type Config struct {
 	Op struct {
 		Mode        CfgMode
 		Format      decoder.StringFormatType
-		BridgeCfg   BridgeConfig   `yaml:"bridgeconfig"`
+		StreamCfg   StreamConfig   `yaml:"streamconfig"`
 		PlaybackCfg PlaybackConfig `yaml:"playbackconfig"`
 	}
 }
@@ -71,8 +71,8 @@ type PlaybackConfig struct {
 	PubFreq uint
 }
 
-// BridgeConfig are settigns used for bridge mode
-type BridgeConfig struct {
+// StreamConfig are settigns used for bridge mode
+type StreamConfig struct {
 	HTTPAuth string `yaml:"http-auth"`
 }
 

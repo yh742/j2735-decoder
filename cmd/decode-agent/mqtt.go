@@ -11,6 +11,7 @@ import (
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog/log"
+	"github.com/yh742/j2735-decoder/internal/cfgparser"
 )
 
 func generateClientID() string {
@@ -19,6 +20,19 @@ func generateClientID() string {
 		hostname = "host-" + string(rand.Int63()) + string(rand.Int63())
 	}
 	return hostname + "-" + strconv.Itoa(time.Now().Second())
+}
+
+func createMQTTClient(setting cfgparser.MqttSettings, callback MQTT.MessageHandler) (MQTT.Client, error) {
+	auth := parseAuthFiles(setting.MQTTAuth)
+	cli, err := connectToMqtt(setting.Server, setting.Clientid, auth, callback)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Msg("cannot connect to mqtt server for publishing")
+		return nil, err
+	}
+	log.Debug().Msgf("Connected to %s", setting.Server)
+	return cli, nil
 }
 
 // Set this way so we can test this stub this out for test

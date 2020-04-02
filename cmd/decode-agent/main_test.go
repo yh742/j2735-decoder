@@ -9,11 +9,11 @@ import (
 	"os"
 	"path"
 	"strings"
-	"syscall"
 	"testing"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/yh742/j2735-decoder/internal/cfgparser"
 	"github.com/yh742/j2735-decoder/pkg/decoder"
 	"gotest.tools/assert"
@@ -24,6 +24,7 @@ var mc *mockClient
 func TestMain(m *testing.M) {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	log.Logger = log.With().Caller().Logger()
 	// stub out mqtt method
 	connectToMqtt = func(server string, clientid string, auth basicAuth, callback MQTT.MessageHandler) (MQTT.Client, error) {
 		if callback != nil {
@@ -62,10 +63,8 @@ func TestBridgePassthrough(t *testing.T) {
 		cfg, err := cfgparser.Parse(path.Join("./test/resources/config/", key))
 		assert.NilError(t, err)
 		// launch bridge asynchronously
-		go func() {
-			bridge(cfg)
-		}()
-		<-testReady
+		sa := streamAgent{}
+		sa.run(cfg, false)
 		file, err := os.Open("./test/resources/logs/bsm-sample.log")
 		defer file.Close()
 		assert.NilError(t, err)
@@ -74,7 +73,7 @@ func TestBridgePassthrough(t *testing.T) {
 				payload: data,
 			})
 		}, false, cfg.Op.PlaybackCfg.PubFreq)
-		sig <- syscall.SIGINT
+		sa.kill()
 		if key == "bridge-passthrough.yaml" {
 			mc.PubMux.RLock()
 			lastMsg, ok := mc.MockStore[len(mc.MockStore)-1].([]byte)
@@ -93,16 +92,14 @@ func TestBridgePassthrough(t *testing.T) {
 	}
 }
 
-func TestHttpGet(t *testing.T) {
+func TestHttpGetPut(t *testing.T) {
 	// read configuration
 	mc = &mockClient{}
 	cfg, err := cfgparser.Parse("./test/resources/config/bridge-passthrough.yaml")
 	assert.NilError(t, err)
 	// launch bridge asynchronously
-	go func() {
-		bridge(cfg)
-	}()
-	<-testReady
+	sa := streamAgent{}
+	sa.run(cfg, false)
 	client := &http.Client{}
 	// check GET calls
 	req, err := http.NewRequest("GET", "http://localhost:8080/publish/setting", nil)
@@ -133,5 +130,5 @@ func TestHttpGet(t *testing.T) {
 	resp, err = client.Do(req)
 	assert.NilError(t, err)
 	assert.Equal(t, resp.StatusCode, 500)
-	sig <- syscall.SIGINT
+	sa.kill()
 }

@@ -46,10 +46,15 @@ func main() {
 	// launch decode-agent as different modes
 	// supported modes: playback, bridge
 	// TODO: batching messages
+	var agt agentRunner
 	switch cfg.Op.Mode {
 	case cfgparser.Playback:
 		playback(cfg)
-	case cfgparser.Bridge:
-		bridge(cfg)
+	default:
+		agt = newAgent(cfg.Op.Mode)
 	}
+	if agt != nil {
+		agt.run(cfg, true)
+	}
+	log.Fatal().Msg("agent type not supported")
 }

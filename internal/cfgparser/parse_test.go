@@ -12,7 +12,7 @@ import (
 )
 
 func TestParseYaml(t *testing.T) {
-	testArray := [...]string{"bridge.yaml", "playback.yaml"}
+	testArray := [...]string{"streamconfig.yaml", "playback.yaml"}
 	for _, item := range testArray {
 		t.Logf("Parsing '%s'... ", item)
 		cfg, err := cfgparser.Parse(path.Join("./test/resources/", item))
@@ -21,8 +21,8 @@ func TestParseYaml(t *testing.T) {
 		assert.Equal(t, cfg.Publish.Topic, "vz/outputs")
 		assert.Equal(t, cfg.Publish.Clientid, "111")
 		switch cfg.Op.Mode {
-		case cfgparser.Bridge:
-			assert.Equal(t, cfg.Op.BridgeCfg.HTTPAuth, "/etc/decode-agent/http-psw")
+		case cfgparser.Stream:
+			assert.Equal(t, cfg.Op.StreamCfg.HTTPAuth, "/etc/decode-agent/http-psw")
 			assert.Equal(t, cfg.Op.Format, decoder.JSON)
 		case cfgparser.Playback:
 			assert.Equal(t, cfg.Op.PlaybackCfg.File, "./playback.txt")
@@ -40,14 +40,14 @@ func TestEnvVariables(t *testing.T) {
 	os.Setenv("SUBSCRIBE_MQTTSETTINGS_SERVER", "subscribe.net")
 	os.Setenv("OP_MODE", "PLAYBACK")
 	os.Setenv("OP_FORMAT", "XML")
-	os.Setenv("OP_BRIDGECFG_HTTPAUTH", "/etc/blah")
-	cfg, err := cfgparser.Parse(path.Join("./test/resources/bridge.yaml"))
+	os.Setenv("OP_STREAMCFG_HTTPAUTH", "/etc/blah")
+	cfg, err := cfgparser.Parse(path.Join("./test/resources/streamconfig.yaml"))
 	assert.NilError(t, err)
 
 	// these should match the environment variables you set above
 	assert.Equal(t, cfg.Publish.Clientid, "222")
 	assert.Equal(t, cfg.Subscribe.Server, "subscribe.net")
 	assert.Equal(t, cfg.Op.Mode, cfgparser.Playback)
-	assert.Equal(t, cfg.Op.BridgeCfg.HTTPAuth, "/etc/blah")
+	assert.Equal(t, cfg.Op.StreamCfg.HTTPAuth, "/etc/blah")
 	assert.Equal(t, cfg.Op.Format, decoder.XML)
 }
