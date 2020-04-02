@@ -59,6 +59,7 @@ type Config struct {
 	Op struct {
 		Mode        CfgMode
 		Format      decoder.StringFormatType
+		BatchCfg    BatchConfig    `yaml:"batchconfig"`
 		StreamCfg   StreamConfig   `yaml:"streamconfig"`
 		PlaybackCfg PlaybackConfig `yaml:"playbackconfig"`
 	}
@@ -77,10 +78,9 @@ type StreamConfig struct {
 }
 
 // BatchConfig are settings used for batch mode
-// type BatchConfig struct {
-// 	Pubfreq uint
-// 	Expiry  uint
-// }
+type BatchConfig struct {
+	PubFreq uint
+}
 
 // MqttSettings are settings used for batch mode
 type MqttSettings struct {

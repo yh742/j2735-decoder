@@ -13,7 +13,7 @@ services:
     command: -loglevel=0 
     volumes:
       - type: bind
-        source: ./config/bridge
+        source: ./config/stream
         target: /etc/decode-agent
     ports:
       - "8080:8080"

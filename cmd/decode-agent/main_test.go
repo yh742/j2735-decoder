@@ -23,7 +23,7 @@ var mc *mockClient
 
 func TestMain(m *testing.M) {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	log.Logger = log.With().Caller().Logger()
 	// stub out mqtt method
 	connectToMqtt = func(server string, clientid string, auth basicAuth, callback MQTT.MessageHandler) (MQTT.Client, error) {
@@ -52,7 +52,7 @@ func TestPlayback(t *testing.T) {
 	assert.Equal(t, strings.ToUpper(lastStr), matchString)
 }
 
-func TestBridgePassthrough(t *testing.T) {
+func TestStreaming(t *testing.T) {
 	// this test is noisy
 	cfgs := map[string]string{
 		"bridge-passthrough.yaml": "80142E4140049855C407A76D84C11CB2FD1488017FFFFFFFF00002EFFD7A37C14E8005800011823100082000103400480003035B7D5233D38000",
@@ -90,6 +90,29 @@ func TestBridgePassthrough(t *testing.T) {
 			assert.Assert(t, ok)
 		}
 	}
+}
+
+func TestBatch(t *testing.T) {
+	// this test is noisy
+	mc = &mockClient{}
+	cfg, err := cfgparser.Parse(path.Join("./test/resources/config/", "bridge-batch.yaml"))
+	assert.NilError(t, err)
+	// launch bridge asynchronously
+	sa := batchAgent{}
+	sa.run(cfg, false)
+	file, err := os.Open("./test/resources/logs/bsm-sample.log")
+	defer file.Close()
+	assert.NilError(t, err)
+	playLogFile(file, func(data []byte) {
+		mc.CallBack(mc, &message{
+			payload: data,
+		})
+	}, false, 0)
+	sa.kill()
+	mc.PubMux.RLock()
+	_, ok := mc.MockStore[len(mc.MockStore)-1].(string)
+	mc.PubMux.RUnlock()
+	assert.Assert(t, ok)
 }
 
 func TestHttpGetPut(t *testing.T) {
