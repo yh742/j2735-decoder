@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mosquitto-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mosquitto-broker
+  template:
+    metadata:
+      labels:
+        app: mosquitto-broker
+    spec:
+      containers:
+        - name: mosquitto-broker
+          image: eclipse-mosquitto:latest
+          imagePullPolicy: Always
+          ports:
+          - name: mqtt
+            containerPort: 1883
+          - name: websocket
+            containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /mosquitto/config
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: mosquitto-conf

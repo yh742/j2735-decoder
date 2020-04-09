@@ -1,0 +1,16 @@
+subscribe:
+  clientid: 012
+  server: mosquitto:1883
+  topic: pubtest
+  qos: 0
+publish:
+  clientid: 123
+  server: mosquitto:1883
+  topic: streamtest
+  qos: 0 
+op: 
+  mode: stream
+  format: json
+  streamconfig:
+    http-auth: /etc/decode-agent/http-auth
+    

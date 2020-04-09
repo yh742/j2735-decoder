@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: playback-agent-deployment
+spec:
+  selector:
+    matchLabels:
+      app: playback-agent
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: playback-agent
+    spec:
+      containers:
+      - name: playback-agent
+        image: yhseanhsu/decode-agent:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "2Gi"
+            ephemeral-storage: "2Gi"
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"
+            ephemeral-storage: "2Gi"
+        args:
+        - "-loglevel=0"
+        volumeMounts:
+          - name: config
+            mountPath: /etc/decode-agent/config.yaml
+            subPath: config.yaml
+            readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: playback-config
+            items:
+            - key: stream.yaml
+              path: config.yaml
