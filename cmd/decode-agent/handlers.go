@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog/log"
@@ -22,18 +21,25 @@ func mqttMessageHandler(pubClient MQTT.Client, msg MQTT.Message, pubCfg cfgparse
 			return
 		}
 		token = pubClient.Publish(pubCfg.Topic, byte(pubCfg.Qos), false, decodedMsg)
+		log.Trace().Msgf("decoded message in %d: %s", format, decodedMsg)
 	} else {
 		token = pubClient.Publish(pubCfg.Topic, byte(pubCfg.Qos), false, msg.Payload())
+		log.Trace().Msgf("decoded message in %d: %s", format, msg.Payload())
 	}
 	token.Wait()
 }
 
-func getSettingHandler(w http.ResponseWriter, r *http.Request, cfg *cfgparser.MqttSettings, auth basicAuth) {
+func getSettingHandler(w http.ResponseWriter, r *http.Request, cfg *cfgparser.Config, auth basicAuth) {
 	if !checkBasicHTTPAuth(r, auth) {
 		http.Error(w, "unable to verify identity", http.StatusForbidden)
 		return
 	}
-	js, err := json.Marshal(cfg)
+	// only expose mutable variables
+	js, err := json.Marshal(ExposedSettings{
+		PubTopic: cfg.Publish.Topic,
+		SubTopic: cfg.Publish.Topic,
+		Format:   cfg.Op.Format,
+	})
 	if err != nil {
 		log.Error().Err(err).Msg("cannot marshal json on http pub GET")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -43,7 +49,7 @@ func getSettingHandler(w http.ResponseWriter, r *http.Request, cfg *cfgparser.Mq
 	w.Write(js)
 }
 
-func putSettingsHandler(w http.ResponseWriter, r *http.Request, oldTopic string, auth basicAuth, updateTopicCb func(string)) {
+func putSettingsHandler(w http.ResponseWriter, r *http.Request, auth basicAuth, updateCallback func(ExposedSettings)) {
 	if !checkBasicHTTPAuth(r, auth) {
 		http.Error(w, "unable to verify identity", http.StatusForbidden)
 		return
@@ -54,20 +60,14 @@ func putSettingsHandler(w http.ResponseWriter, r *http.Request, oldTopic string,
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	settings := cfgparser.MqttSettings{}
+	settings := ExposedSettings{}
 	err = json.Unmarshal(rbody, &settings)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot read unmarshal into json")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	newTopic := strings.TrimSpace(settings.Topic)
 	log.Debug().Msgf("unmarshaled results: %v", settings)
-	if newTopic == "" || newTopic == oldTopic {
-		log.Debug().Msg("content not updated")
-		w.WriteHeader(204)
-		return
-	}
-	updateTopicCb(newTopic)
+	updateCallback(settings)
 	w.WriteHeader(200)
 }

@@ -1,6 +1,7 @@
 package decoder
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -12,7 +13,32 @@ const (
 	XML StringFormatType = iota
 	JSON
 	PASS
+	NA
 )
+
+// MarshalJSON for decoder.StringFormatType type
+func (format StringFormatType) MarshalJSON() ([]byte, error) {
+	switch format {
+	case XML:
+		return []byte(`"xml"`), nil
+	case JSON:
+		return []byte(`"json"`), nil
+	case PASS:
+		return []byte(`"pass"`), nil
+	}
+	return nil, fmt.Errorf("could not marshal format type to json %v", format)
+}
+
+// UnmarshalJSON for decoder.StringFormatType type
+func (format *StringFormatType) UnmarshalJSON(b []byte) error {
+	str := string(b)
+	temp, err := parseFormatType(strings.ReplaceAll(str, "\"", ""))
+	if err != nil {
+		return err
+	}
+	*format = temp
+	return nil
+}
 
 // UnmarshalYAML for decoder.StringFormatType type
 func (format *StringFormatType) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -20,22 +46,34 @@ func (format *StringFormatType) UnmarshalYAML(unmarshal func(interface{}) error)
 	if err := unmarshal(&formatStr); err != nil {
 		return err
 	}
+	temp, err := parseFormatType(formatStr)
+	if err != nil {
+		return err
+	}
+	*format = temp
+	return nil
+}
+
+// ParseFormatType is a helper method for parsing format types
+func parseFormatType(formatStr string) (StringFormatType, error) {
 	switch strings.ToLower(formatStr) {
 	case "xml":
-		*format = XML
+		return XML, nil
 	case "json":
-		*format = JSON
+		return JSON, nil
 	case "pass":
-		*format = PASS
+		return PASS, nil
 	}
-	return nil
+	return NA, fmt.Errorf("cannot convert %s", formatStr)
 }
 
 // ParseString returns number based on string representation
 func (format *StringFormatType) ParseString(str string) (uint8, bool) {
-	m := map[string]uint8{"xml": 0, "json": 1, "pass": 2}
-	val, ok := m[str]
-	return val, ok
+	formatType, err := parseFormatType(str)
+	if err != nil {
+		return 0, false
+	}
+	return uint8(formatType), true
 }
 
 // ID to identify message type

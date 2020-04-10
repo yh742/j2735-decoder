@@ -12,6 +12,17 @@ spec:
       labels:
         app: playback-agent
     spec:
+      initContainers:
+      - name: install
+        image: busybox
+        command:
+        - "wget"
+        - "-O"
+        - "/temp/bsm-sample.log"
+        - "https://raw.githubusercontent.com/yh742/j2735-decoder/vzmode/compose/playback/bsm-sample.log"
+        volumeMounts:
+        - name: logdir
+          mountPath: /temp
       containers:
       - name: playback-agent
         image: yhseanhsu/decode-agent:latest
@@ -28,14 +39,19 @@ spec:
         args:
         - "-loglevel=0"
         volumeMounts:
-          - name: config
-            mountPath: /etc/decode-agent/config.yaml
-            subPath: config.yaml
-            readOnly: true
+        - name: config
+          mountPath: /etc/decode-agent/config.yaml
+          subPath: config.yaml
+          readOnly: true
+        - name: logdir
+          mountPath: /etc/decode-agent/bsm-sample.log
+          subPath: bsm-sample.log
       volumes:
         - name: config
           configMap:
             name: playback-config
             items:
-            - key: stream.yaml
+            - key: playback.yaml
               path: config.yaml
+        - name: logdir
+          emptyDir: {}

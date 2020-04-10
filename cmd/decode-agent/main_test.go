@@ -125,7 +125,7 @@ func TestHttpGetPut(t *testing.T) {
 	sa.run(cfg, false)
 	client := &http.Client{}
 	// check GET calls
-	req, err := http.NewRequest("GET", "http://localhost:8080/publish/setting", nil)
+	req, err := http.NewRequest("GET", "http://localhost:8080/settings", nil)
 	assert.NilError(t, err)
 	req.SetBasicAuth("admin", "admin")
 	resp, err := client.Do(req)
@@ -136,17 +136,13 @@ func TestHttpGetPut(t *testing.T) {
 		"topic": "test/test",
 	})
 	assert.NilError(t, err)
-	req, err = http.NewRequest("PUT", "http://localhost:8080/subscribe/setting", bytes.NewBuffer(reqBody))
+	req, err = http.NewRequest("PUT", "http://localhost:8080/settings", bytes.NewBuffer(reqBody))
 	assert.NilError(t, err)
 	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth("admin", "admin")
 	resp, err = client.Do(req)
 	assert.NilError(t, err)
 	assert.Equal(t, resp.StatusCode, 200)
-	// update with old value should throw 204
-	resp, err = client.Do(req)
-	assert.NilError(t, err)
-	assert.Equal(t, resp.StatusCode, 204)
 	// check error condition
 	req.Body = ioutil.NopCloser(strings.NewReader("blahblah"))
 	req.ContentLength = int64(len("blahblah"))

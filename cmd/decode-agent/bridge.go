@@ -10,10 +10,15 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 	"github.com/yh742/j2735-decoder/internal/cfgparser"
+	"github.com/yh742/j2735-decoder/pkg/decoder"
 )
 
-const pubURL = "/publish/setting"
-const subURL = "/subscribe/setting"
+// ExposedSettings are settings exposed through http
+type ExposedSettings struct {
+	PubTopic string
+	SubTopic string
+	Format   decoder.StringFormatType
+}
 
 type bridge struct {
 	httpHupSig chan bool
@@ -59,6 +64,9 @@ func (agt *bridge) startListening(callback MQTT.MessageHandler) bool {
 }
 
 func (agt *bridge) startHTTPServer(port int) {
+	// listen on settings endpoint, exposing only sub/pub topics and format
+	const URL = "/settings"
+
 	httpAuth := parseAuthFiles(agt.cfg.Op.StreamCfg.HTTPAuth)
 	log.Debug().Msgf("Username: '%s' Password: '%s'", httpAuth.username, httpAuth.password)
 	router := mux.NewRouter()
@@ -67,22 +75,24 @@ func (agt *bridge) startHTTPServer(port int) {
 	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
 
 	// GET methods
-	router.HandleFunc(pubURL, func(w http.ResponseWriter, r *http.Request) {
-		getSettingHandler(w, r, &agt.cfg.Publish.MqttSettings, httpAuth)
-	}).Methods("GET")
-	router.HandleFunc(subURL, func(w http.ResponseWriter, r *http.Request) {
-		getSettingHandler(w, r, &agt.cfg.Subscribe.MqttSettings, httpAuth)
+	router.HandleFunc(URL, func(w http.ResponseWriter, r *http.Request) {
+		getSettingHandler(w, r, &agt.cfg, httpAuth)
 	}).Methods("GET")
 
 	// PUT methods
-	router.HandleFunc(pubURL, func(w http.ResponseWriter, r *http.Request) {
-		putSettingsHandler(w, r, agt.cfg.Publish.Topic, httpAuth, func(newTopic string) {
-			agt.switchTopicCb(newTopic, pubURL)
-		})
-	}).Methods("PUT")
-	router.HandleFunc(subURL, func(w http.ResponseWriter, r *http.Request) {
-		putSettingsHandler(w, r, agt.cfg.Subscribe.Topic, httpAuth, func(newTopic string) {
-			agt.switchTopicCb(newTopic, subURL)
+	router.HandleFunc(URL, func(w http.ResponseWriter, r *http.Request) {
+		putSettingsHandler(w, r, httpAuth, func(eSetting ExposedSettings) {
+			if eSetting.PubTopic != agt.cfg.Publish.Topic && eSetting.PubTopic != "" {
+				agt.switchTopics(agt.pubClient, agt.cfg.Publish.MqttSettings, eSetting.PubTopic)
+				agt.cfg.Publish.Topic = eSetting.PubTopic
+			}
+			if eSetting.SubTopic != agt.cfg.Subscribe.Topic && eSetting.SubTopic != "" {
+				agt.switchTopics(agt.subClient, agt.cfg.Subscribe.MqttSettings, eSetting.SubTopic)
+				agt.cfg.Subscribe.Topic = eSetting.SubTopic
+			}
+			if eSetting.Format != agt.cfg.Op.Format && eSetting.Format != decoder.NA {
+				agt.cfg.Op.Format = eSetting.Format
+			}
 		})
 	}).Methods("PUT")
 
@@ -98,25 +108,14 @@ func (agt *bridge) startHTTPServer(port int) {
 	}()
 }
 
-func (agt *bridge) switchTopicCb(newTopic string, url string) {
-	var client MQTT.Client
-	var settings *cfgparser.MqttSettings
-	switch url {
-	case pubURL:
-		client = agt.pubClient
-		settings = &agt.cfg.Publish.MqttSettings
-	case subURL:
-		client = agt.subClient
-		settings = &agt.cfg.Subscribe.MqttSettings
-	}
-	token := client.Unsubscribe(settings.Topic).Wait()
+func (agt *bridge) switchTopics(client MQTT.Client, oldSetting cfgparser.MqttSettings, newTopic string) {
+	token := client.Unsubscribe(oldSetting.Topic).Wait()
 	if !token {
-		log.Error().Msgf("could not unsubscribe from topic %s", settings.Topic)
+		log.Error().Msgf("could not unsubscribe from topic %s", oldSetting.Topic)
 	}
-	settings.Topic = newTopic
-	token = client.Subscribe(settings.Topic, settings.Qos, agt.callBack).Wait()
+	token = client.Subscribe(newTopic, oldSetting.Qos, agt.callBack).Wait()
 	if !token {
-		log.Error().Msgf("could not subscribe to new topic %s", settings.Topic)
+		log.Error().Msgf("could not subscribe to new topic %s", newTopic)
 	}
 }
 

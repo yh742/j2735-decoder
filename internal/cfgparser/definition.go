@@ -72,8 +72,9 @@ type PlaybackConfig struct {
 	PubFreq uint
 }
 
-// StreamConfig are settigns used for bridge mode
+// StreamConfig are settigns used for stream mode
 type StreamConfig struct {
+	// this is a path to the secret
 	HTTPAuth string `yaml:"http-auth"`
 }
 
@@ -82,9 +83,10 @@ type BatchConfig struct {
 	PubFreq uint
 }
 
-// MqttSettings are settings used for batch mode
+// MqttSettings are used for setting up mqtt connecitons
 type MqttSettings struct {
 	Clientid string
+	// this is a path to the secret
 	MQTTAuth string `yaml:"mqtt-auth"`
 	Server   string
 	Topic    string

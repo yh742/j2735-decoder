@@ -44,11 +44,13 @@ func (agt *streamAgent) run(cfg cfgparser.Config, block bool) error {
 	}
 	bdConn.startHTTPServer(8080)
 	bdConn.startListening(func(client MQTT.Client, msg MQTT.Message) {
+		log.Debug().Msgf("received msg: %v", msg)
 		mqttMessageHandler(bdConn.pubClient, msg, bdConn.cfg.Publish.MqttSettings, bdConn.cfg.Op.Format)
 	})
 	agt.bridge = bdConn
 	agt.block = block
 	if agt.block {
+		log.Debug().Msg("waiting for stop signal")
 		<-agt.killSig
 	}
 	return nil

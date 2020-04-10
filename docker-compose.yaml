@@ -1,24 +1,7 @@
 version: "3.3"
 
 services:
-  decode-agent-batch:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    networks: 
-      - mqtt
-    depends_on:
-      - decode-agent-playback
-      - mosquitto
-    command: -loglevel=0 
-    volumes:
-      - type: bind
-        source: ./compose/batch
-        target: /etc/decode-agent
-    ports:
-      - "8081:8080"
-
-  # decode-agent-stream:
+  # decode-agent-batch:
   #   build: 
   #     context: .
   #     dockerfile: Dockerfile
@@ -30,10 +13,27 @@ services:
   #   command: -loglevel=0 
   #   volumes:
   #     - type: bind
-  #       source: ./compose/stream
+  #       source: ./compose/batch
   #       target: /etc/decode-agent
   #   ports:
-  #     - "8080:8080"
+  #     - "8081:8080"
+
+  decode-agent-stream:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    networks: 
+      - mqtt
+    depends_on:
+      - decode-agent-playback
+      - mosquitto
+    command: -loglevel=-1
+    volumes:
+      - type: bind
+        source: ./compose/config/stream
+        target: /etc/decode-agent
+    ports:
+      - "8080:8080"
 
   decode-agent-playback:
     build: 
@@ -46,7 +46,7 @@ services:
     command: -loglevel=0 
     volumes:
       - type: bind
-        source: ./compose/playback
+        source: ./compose/config/playback
         target: /etc/decode-agent
 
   mosquitto:

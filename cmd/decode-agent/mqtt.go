@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"math/rand"
 	"os"
 	"strconv"
@@ -16,10 +17,12 @@ import (
 
 func generateClientID() string {
 	hostname, err := os.Hostname()
-	if err != nil {
-		hostname = "host-" + string(rand.Int63()) + string(rand.Int63())
+	if hostname == "" || err != nil {
+		hostname = "anonhost"
 	}
-	return hostname + "-" + strconv.Itoa(time.Now().Second())
+	hostname = hostname + "-" + strconv.Itoa(time.Now().Nanosecond()) + fmt.Sprintf("%d", rand.Int63()) + fmt.Sprintf("%d", rand.Int63())
+	log.Debug().Msgf("generated random clientid %s", hostname)
+	return hostname
 }
 
 func createMQTTClient(setting cfgparser.MqttSettings, callback MQTT.MessageHandler) (MQTT.Client, error) {
@@ -31,7 +34,7 @@ func createMQTTClient(setting cfgparser.MqttSettings, callback MQTT.MessageHandl
 			Msg("cannot connect to mqtt server for publishing")
 		return nil, err
 	}
-	log.Debug().Msgf("Connected to %s", setting.Server)
+	log.Debug().Msgf("%s connected to %s", setting.Clientid, setting.Server)
 	return cli, nil
 }
 
