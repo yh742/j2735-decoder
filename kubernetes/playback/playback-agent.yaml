@@ -19,7 +19,7 @@ spec:
         - "wget"
         - "-O"
         - "/temp/bsm-sample.log"
-        - "https://raw.githubusercontent.com/yh742/j2735-decoder/vzmode/compose/playback/bsm-sample.log"
+        - "https://raw.githubusercontent.com/yh742/j2735-decoder/vzmode/cmd/decode-agent/test/resources/logs/bsm-sample.log"
         volumeMounts:
         - name: logdir
           mountPath: /temp

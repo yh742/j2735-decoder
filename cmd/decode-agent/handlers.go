@@ -37,7 +37,7 @@ func getSettingHandler(w http.ResponseWriter, r *http.Request, cfg *cfgparser.Co
 	// only expose mutable variables
 	js, err := json.Marshal(ExposedSettings{
 		PubTopic: cfg.Publish.Topic,
-		SubTopic: cfg.Publish.Topic,
+		SubTopic: cfg.Subscribe.Topic,
 		Format:   cfg.Op.Format,
 	})
 	if err != nil {

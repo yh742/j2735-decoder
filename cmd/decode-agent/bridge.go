@@ -70,9 +70,10 @@ func (agt *bridge) startHTTPServer(port int) {
 	httpAuth := parseAuthFiles(agt.cfg.Op.StreamCfg.HTTPAuth)
 	log.Debug().Msgf("Username: '%s' Password: '%s'", httpAuth.username, httpAuth.password)
 	router := mux.NewRouter()
-	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type"})
+	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Origin", "Accept", "Authorization", "X-CSRF-Token"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
+	allowCreds := handlers.AllowCredentials()
 
 	// GET methods
 	router.HandleFunc(URL, func(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +99,7 @@ func (agt *bridge) startHTTPServer(port int) {
 
 	agt.httpServer = http.Server{
 		Addr:    ":" + strconv.Itoa(port),
-		Handler: handlers.CORS(originsOk, headersOk, methodsOk)(router),
+		Handler: handlers.CORS(originsOk, headersOk, methodsOk, allowCreds)(router),
 	}
 	go func() {
 		if err := agt.httpServer.ListenAndServe(); err != http.ErrServerClosed {

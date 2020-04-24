@@ -25,7 +25,13 @@ spec:
             - name: config
               mountPath: /mosquitto/config
               readOnly: true
+            - name: secret
+              mountPath: /etc/mosquitto/passwd
+              readOnly: true
       volumes:
         - name: config
           configMap:
             name: mosquitto-conf
+        - name: secret
+          secret:
+            secretName: mqtt-auth
