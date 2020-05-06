@@ -1,0 +1,38 @@
+name: playbackConfig
+subscribe:
+  clientid: 111
+  auth: /etc/decode-agent/pass
+  server: subscribe.com
+  topic: vz/inputs
+  qos: 3
+publish:
+  clientid: 111
+  auth: /etc/decode-agent/pass
+  server: publish.com
+  topic: vz/outputs
+  qos: 0 
+op: 
+  mode: playback
+  format: json
+  playbackconfig: 
+    file: "./playback.txt"
+    loop: true
+    pubfreq: 200
+---
+name: streamConfig
+subscribe:
+  clientid: 111
+  auth: /etc/decode-agent/sub-pass
+  server: subscribe.com
+  topic: vz/inputs
+  qos: 3
+publish:
+  clientid: 111
+  auth: /etc/decode-agent/pub-pass
+  server: publish.com
+  topic: vz/outputs
+  qos: 0 
+op: 
+  mode: stream
+  format: json 
+  http-auth: /etc/decode-agent/http-psw

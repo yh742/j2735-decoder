@@ -29,7 +29,7 @@ func mqttMessageHandler(pubClient MQTT.Client, msg MQTT.Message, pubCfg cfgparse
 	token.Wait()
 }
 
-func getSettingHandler(w http.ResponseWriter, r *http.Request, cfg *cfgparser.Config, auth basicAuth) {
+func getSettingHandler(w http.ResponseWriter, r *http.Request, cfg cfgparser.Config, auth basicAuth) {
 	if !checkBasicHTTPAuth(r, auth) {
 		http.Error(w, "unable to verify identity", http.StatusForbidden)
 		return

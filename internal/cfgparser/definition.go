@@ -50,6 +50,7 @@ func (mode *CfgMode) ParseString(str string) (uint8, bool) {
 
 // Config represents the yaml file fields
 type Config struct {
+	Name      string
 	Subscribe struct {
 		MqttSettings `yaml:",inline"` // should be uniform with publish in terms of naming convention for env vars
 	}
@@ -58,9 +59,9 @@ type Config struct {
 	}
 	Op struct {
 		Mode        CfgMode
+		HTTPAuth    string `yaml:"http-auth"`
 		Format      decoder.StringFormatType
 		BatchCfg    BatchConfig    `yaml:"batchconfig"`
-		StreamCfg   StreamConfig   `yaml:"streamconfig"`
 		PlaybackCfg PlaybackConfig `yaml:"playbackconfig"`
 	}
 }
@@ -70,12 +71,6 @@ type PlaybackConfig struct {
 	File    string
 	Loop    bool
 	PubFreq uint
-}
-
-// StreamConfig are settigns used for stream mode
-type StreamConfig struct {
-	// this is a path to the secret
-	HTTPAuth string `yaml:"http-auth"`
 }
 
 // BatchConfig are settings used for batch mode

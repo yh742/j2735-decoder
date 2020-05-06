@@ -18,6 +18,20 @@ services:
   #   ports:
   #     - "8081:8080"
 
+  # decode-agent-playback:
+  #   build: 
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   networks: 
+  #     - mqtt
+  #   depends_on:
+  #     - mosquitto
+  #   command: -loglevel=0 
+  #   volumes:
+  #     - type: bind
+  #       source: ./compose/config/playback
+  #       target: /etc/decode-agent
+
   decode-agent-stream:
     build: 
       context: .
@@ -25,29 +39,14 @@ services:
     networks: 
       - mqtt
     depends_on:
-      - decode-agent-playback
       - mosquitto
     command: -loglevel=-1
     volumes:
       - type: bind
-        source: ./compose/config/stream
+        source: ./compose/config
         target: /etc/decode-agent
     ports:
-      - "8080:8080"
-
-  decode-agent-playback:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    networks: 
-      - mqtt
-    depends_on:
-      - mosquitto
-    command: -loglevel=0 
-    volumes:
-      - type: bind
-        source: ./compose/config/playback
-        target: /etc/decode-agent
+      - "8080:8080" 
 
   mosquitto:
     image: eclipse-mosquitto

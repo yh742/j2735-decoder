@@ -1,6 +1,7 @@
 package cfgparser
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"reflect"
@@ -14,23 +15,25 @@ import (
 // Parse takes in a yaml configuration file and unmarshals it.
 // Configuration file can be overriden by environment variables.
 // Returns a Config struct and error.
-func Parse(configPath string) (Config, error) {
+func Parse(configPath string) ([]Config, error) {
 	file, err := os.Open(configPath)
 	defer file.Close()
 	if err != nil {
-		return Config{}, err
+		return nil, err
 	}
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
-		return Config{}, err
+		return nil, err
 	}
-	cfg := Config{}
-	err = yaml.Unmarshal([]byte(data), &cfg)
-	if err != nil {
-		return Config{}, err
+	bytesRead := bytes.NewReader(data)
+	var cfgs []Config
+	var cfg Config
+	yamlDec := yaml.NewDecoder(bytesRead)
+	for yamlDec.Decode(&cfg) == nil {
+		overrideConfig(&cfg, cfg.Name)
+		cfgs = append(cfgs, cfg)
 	}
-	overrideConfig(&cfg, "")
-	return cfg, nil
+	return cfgs, nil
 }
 
 // overrideConfig recurses the config struct to look for corresponding env var.
