@@ -1,0 +1,30 @@
+name: json
+subscribe:
+  clientid: 111
+  server: subscribe.com
+  topic: vz/inputs
+  qos: 3
+publish:
+  clientid: 111
+  server: publish.com
+  topic: vz/outputs
+  qos: 0 
+op: 
+  mode: stream
+  format: json
+---
+name: passthrough
+subscribe:
+  clientid: 111
+  server: subscribe.com
+  topic: vz/inputs
+  qos: 3
+publish:
+  clientid: 111
+  server: publish.com
+  topic: vz/outputs
+  qos: 0 
+op: 
+  mode: stream
+  format: pass
+  http-auth: ./test/resources/config/http-auth.txt

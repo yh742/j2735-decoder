@@ -1,0 +1,17 @@
+subscribe:
+  clientid: subsubsub-batch
+  server: mosquitto:1883
+  topic: pubtest
+  qos: 0
+publish:
+  clientid: pubpubpub-batch
+  server: mosquitto:1883
+  topic: batchtest
+  qos: 0 
+op: 
+  mode: batch
+  format: json
+  batchconfig:
+    http-auth: /etc/decode-agent/http-auth
+    pubfreq: 3000
+    

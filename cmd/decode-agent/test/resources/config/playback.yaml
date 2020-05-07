@@ -1,0 +1,8 @@
+subscribe:
+publish:
+op: 
+  mode: playback
+  playbackconfig: 
+    file: "./test/resources/logs/bsm-sample.log"
+    loop: false
+    pubfreq: 0
