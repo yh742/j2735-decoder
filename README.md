@@ -15,7 +15,7 @@ The decode agent provides a HTTP interface in which PUT calls can be made to mod
 Only one yaml file is needed to create multiple decode agents. Examples can be seem in the compose/config/config.yaml file. Each yaml section needs to separated by 3 hyphens as per yaml specs. The yaml schema are described below:
 
 ```
-name: string    # HTTP endpoint will be exposed using this name
+name: string    # name of the decode agent, the http endpoint will use this name
 subscribe:      # settings for connecting to subscribing broker
     clientid: string    # clientid for mqtt broker to subscribe to
     server: string      # mqtt broker to subscribe to
@@ -43,6 +43,9 @@ op:             # operation settings
 
 A couple of notes:
 *  the name represents the http endpoint (e.g. name: streamAgent => <fqdn>.com/streamAgent/settings)
+*  all fields in the yaml configuration can be overriden with an environment variables, for example to change operating mode: 
+
+      op.mode => set `<NAME>`_OP_MODE where NAME is the name of the decode agent
 *  the http-auth file must follow the folowing text format:
 
 ```
@@ -50,7 +53,10 @@ username
 password
 ```
 
+### Command Line Flags
 
+*  Log levels (trace=-1, debug=0, info=1, warn=2, error=3) for the program can be changed using the **-loglevel=<-1,0,1,2,3,4,5>**.
+*  Configuration file locations (default location is /etc/decode-agent/config.yaml) for the program can be specified using **-cfg=<file_path>**.  
 
 ## Components
 
