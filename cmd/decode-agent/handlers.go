@@ -11,20 +11,20 @@ import (
 	"github.com/yh742/j2735-decoder/pkg/decoder"
 )
 
-func mqttMessageHandler(pubClient MQTT.Client, msg MQTT.Message, pubCfg cfgparser.MqttSettings, format decoder.StringFormatType) {
+func mqttMessageHandler(pubClient MQTT.Client, msg MQTT.Message, pubCfg cfgparser.MqttSettings, op cfgparser.Op) {
 	log.Debug().Str("source", msg.Topic()).Msgf("%X", msg.Payload())
 	var token MQTT.Token
-	if format != decoder.PASS {
-		decodedMsg, err := decoder.DecodeBytes(msg.Payload(), uint(len(msg.Payload())), format, msg.Topic())
+	if op.Format != decoder.PASS {
+		decodedMsg, err := decoder.DecodeBytes(msg.Payload(), op.Format, msg.Topic(), op.UseProtoBuf)
 		if err != nil {
 			log.Error().Err(err).Msg("cannot decode msg format")
 			return
 		}
 		token = pubClient.Publish(pubCfg.Topic, byte(pubCfg.Qos), false, decodedMsg)
-		log.Trace().Msgf("decoded message in %d: %s", format, decodedMsg)
+		log.Trace().Msgf("decoded message in %d: %s", op.Format, decodedMsg)
 	} else {
 		token = pubClient.Publish(pubCfg.Topic, byte(pubCfg.Qos), false, msg.Payload())
-		log.Trace().Msgf("decoded message in %d: %s", format, msg.Payload())
+		log.Trace().Msgf("decoded message in %d: %s", op.Format, msg.Payload())
 	}
 	token.Wait()
 }

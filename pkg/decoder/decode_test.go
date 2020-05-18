@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -37,7 +38,7 @@ func TestUperToXmlStringConversion(t *testing.T) {
 		uperBytes, err := ioutil.ReadAll(uperFile)
 		assert.NilError(t, err)
 		// decode
-		decodedMsg, err := decoder.DecodeBytes(uperBytes, uint(len(uperBytes)), decoder.XML, "FOO")
+		decodedMsg, err := decoder.DecodeBytes(uperBytes, decoder.XML, "FOO", false)
 		assert.NilError(t, err)
 		xmlBytes, err := ioutil.ReadAll(xmlFile)
 		assert.NilError(t, err)
@@ -46,23 +47,27 @@ func TestUperToXmlStringConversion(t *testing.T) {
 	}
 }
 
-func TestUperToJsonStringConversion(t *testing.T) {
+func TestToJsonStringConversion(t *testing.T) {
 	// filenames
-	testArray := [...]string{"bsm1", "bsm2", "bsm3", "psm1", "spat"}
+	testArray := [...]string{"bsm1", "bsm2", "bsm3", "psm1", "spat", "pbSpat"}
 	for _, item := range testArray {
-		t.Logf("decoding '%s' to json", item+".uper")
-		// open input
-		uperFile, err := os.Open(path.Join(InputFolder, item+".uper"))
+		t.Logf("decoding '%s' to json", item)
+		// decode
+		uperFile, err := os.Open(path.Join(InputFolder, item+".bin"))
 		defer uperFile.Close()
+		assert.NilError(t, err)
+		bytes, err := ioutil.ReadAll(uperFile)
+		assert.NilError(t, err)
+		var decodedMsg string
+		if strings.HasPrefix(item, "pb") {
+			decodedMsg, err = decoder.DecodeBytes(bytes, decoder.JSON, "TEST/SPAT/IN", true)
+		} else {
+			decodedMsg, err = decoder.DecodeBytes(bytes, decoder.JSON, "FOO", false)
+		}
 		assert.NilError(t, err)
 		// read expected output in json
 		jsonFile, err := os.Open(path.Join(JsonOutputFolder, item+".json"))
 		defer jsonFile.Close()
-		uperBytes, err := ioutil.ReadAll(uperFile)
-		assert.NilError(t, err)
-		// decode
-		decodedMsg, err := decoder.DecodeBytes(uperBytes, uint(len(uperBytes)), decoder.JSON, "FOO")
-		assert.NilError(t, err)
 		jsonBytes, err := ioutil.ReadAll(jsonFile)
 		assert.NilError(t, err)
 		jsonString := fmt.Sprintf("%s", jsonBytes)

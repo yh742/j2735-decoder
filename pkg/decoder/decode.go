@@ -15,14 +15,28 @@ import (
 	"strings"
 	"unsafe"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/rs/zerolog/log"
 )
 
 // DecodeBytes is a public function for other packages to decode string.
 // It returns a string in either json or xml format.
 // If source is provided, the broker topic will be added.
-func DecodeBytes(bytes []byte, length uint, format StringFormatType, source string) (string, error) {
-	msgFrame := decodeMessageFrame(&C.asn_DEF_MessageFrame, bytes, uint64(length))
+// Use pb dictate whether to deserialize first
+func DecodeBytes(bytes []byte, format StringFormatType, source string, pb bool) (string, error) {
+	var msgFrame *C.MessageFrame_t = nil
+	// deserialize if (1) spat message (2) protobuf
+	if pb && strings.Contains(strings.ToLower(source), "spat") {
+		var clientMsg ClientDestinedMsg
+		if err := proto.Unmarshal(bytes, &clientMsg); err != nil {
+			log.Error().Msg("Cannot deserialize protobuf message")
+			return "", errors.New("Cannot deserialize protobuf message")
+		}
+		cliBytes := clientMsg.GetMsgBytes()
+		msgFrame = decodeMessageFrame(&C.asn_DEF_MessageFrame, cliBytes, uint64(len(cliBytes)))
+	} else {
+		msgFrame = decodeMessageFrame(&C.asn_DEF_MessageFrame, bytes, uint64(len(bytes)))
+	}
 	if msgFrame == nil {
 		log.Error().
 			Msg("Cannot decode bytes to messageframe struct")

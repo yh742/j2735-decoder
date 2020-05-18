@@ -57,13 +57,17 @@ type Config struct {
 	Publish struct {
 		MqttSettings `yaml:",inline"`
 	}
-	Op struct {
-		Mode        CfgMode
-		HTTPAuth    string `yaml:"http-auth"`
-		Format      decoder.StringFormatType
-		BatchCfg    BatchConfig    `yaml:"batchconfig"`
-		PlaybackCfg PlaybackConfig `yaml:"playbackconfig"`
-	}
+	Op
+}
+
+// Op are settings to define operations
+type Op struct {
+	Mode        CfgMode
+	HTTPAuth    string `yaml:"http-auth"`
+	UseProtoBuf bool
+	Format      decoder.StringFormatType
+	BatchCfg    BatchConfig    `yaml:"batchconfig"`
+	PlaybackCfg PlaybackConfig `yaml:"playbackconfig"`
 }
 
 // PlaybackConfig are settings used for playback mode

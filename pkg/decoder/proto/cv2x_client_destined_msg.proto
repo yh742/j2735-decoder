@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package decoder;
+
+message Position {
+    int32 latitude = 1;
+    int32 longitude = 2;
+}
+
+message ClientDestinedMsg {
+    Position position = 1;
+    bytes MsgBytes = 2;
+}

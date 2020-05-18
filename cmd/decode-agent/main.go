@@ -42,6 +42,7 @@ func main() {
 			Uint8("subscribe.qos", cfg.Subscribe.Qos).
 			Str("subscribe.clientid", cfg.Subscribe.Clientid).
 			Str("subscribe.mqttauth", cfg.Subscribe.MQTTAuth).
+			Bool("op.useprotobuf", cfg.Op.UseProtoBuf).
 			Uint8("op.mode", uint8(cfg.Op.Mode)).Send()
 
 		// launch decode-agent as different mode
