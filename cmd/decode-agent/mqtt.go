@@ -1,10 +1,11 @@
 package main
 
 import (
+	"crypto/rand"
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"os"
 	"strconv"
 	"strings"
@@ -20,7 +21,8 @@ func generateClientID() string {
 	if hostname == "" || err != nil {
 		hostname = "anonhost"
 	}
-	hostname = hostname + "-" + strconv.Itoa(time.Now().Nanosecond()) + fmt.Sprintf("%d", rand.Int63()) + fmt.Sprintf("%d", rand.Int63())
+	randNum, _ := rand.Int(rand.Reader, big.NewInt(5000))
+	hostname = hostname + "-" + strconv.Itoa(time.Now().Nanosecond()) + fmt.Sprintf("%d", randNum)
 	log.Debug().Msgf("generated random clientid %s", hostname)
 	return hostname
 }

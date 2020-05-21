@@ -17,7 +17,7 @@ type bridge struct {
 func newBridgeConnection(cfg cfgparser.Config) (*bridge, error) {
 	// print out bridge related information
 	log.Info().
-		Uint8("op.playbackcfg.format", uint8(cfg.Op.Format)).
+		Uint8("op.format", uint8(cfg.Op.Format)).
 		Send()
 
 	// init variables

@@ -1,0 +1,10 @@
+{"level":"debug","time":1589924824,"caller":"/src/pkg/decoder/decode.go:47","message":"Decoding message type: 20"}
+{"level":"debug","time":1589924824,"caller":"/src/pkg/decoder/conversion.go:80","message":"Bytes Encoded: 802"}
+{"level":"debug","time":1589924824,"caller":"/src/cmd/decode-agent/agent.go:51","message":"received msg: &{false 0 false VZCV2X/1/OUT/VEH/PSGR/FORD/32540/UPER/SPAT 0 [0 19 27 67 18 251 1 128 80 142 192 64 3 18 251 18 170 1 0 32 67 3 121 80 2 2 48 27 190 0] {{0 0} 0} 0x889af0}"}
+{"level":"debug","source":"VZCV2X/1/OUT/VEH/PSGR/FORD/32540/UPER/SPAT","time":1589924824,"caller":"/src/cmd/decode-agent/handlers.go:15","message":"00131B4312FB0180508EC0400312FB12AA010020430379500202301BBE00"}
+{"level":"error","time":1589924824,"caller":"/src/pkg/decoder/decode.go:32","message":"Cannot deserialize protobuf message"}
+{"level":"error","error":"Cannot deserialize protobuf message","time":1589924824,"caller":"/src/cmd/decode-agent/handlers.go:20","message":"cannot decode msg format"}
+{"level":"debug","time":1589924824,"caller":"/src/cmd/decode-agent/agent.go:51","message":"received msg: &{false 0 false VZCV2X/1/OUT/VEH/PSGR/FORD/32540/UPER/SPAT 0 [0 19 27 67 18 251 1 128 80 142 208 64 3 18 251 19 14 1 0 32 67 3 121 80 2 2 48 27 190 0] {{0 0} 0} 0x889af0}"}
+{"level":"debug","source":"VZCV2X/1/OUT/VEH/PSGR/FORD/32540/UPER/SPAT","time":1589924824,"caller":"/src/cmd/decode-agent/handlers.go:15","message":"00131B4312FB0180508ED0400312FB130E010020430379500202301BBE00"}
+{"level":"error","time":1589924824,"caller":"/src/pkg/decoder/decode.go:32","message":"Cannot deserialize protobuf message"}
+{"level":"error","error":"Cannot deserialize protobuf message","time":1589924824,"caller":"/src/cmd/decode-agent/handlers.go:20","message":"cannot decode msg format"}
